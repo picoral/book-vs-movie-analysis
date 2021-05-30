@@ -13,5 +13,4 @@ view(new_emma)
 # save new_emma to disk
 new_emma %>%
   data.frame() %>%
-  write_tsv("data/emma-book.tsv")
-
+  write_tsv("processed-data/emma-book.tsv")
