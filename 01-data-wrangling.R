@@ -39,7 +39,7 @@ length(new_emma_script)
 view(new_emma_script)
 
 new_emma_script %>%
-  data.frame %>%
+  data.frame() %>%
   write_tsv("processed-data/emma-script.tsv")
 
 
