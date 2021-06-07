@@ -84,7 +84,10 @@ all_nps %>%
              x = n)) +
   geom_col() +
   facet_wrap(~source, scales = "free") +
-  scale_y_reordered()
+  scale_y_reordered() +
+  theme_linedraw() +
+  labs(y = "",
+       x = "raw frequency")
 
 
 
