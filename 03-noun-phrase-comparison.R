@@ -1,95 +1,58 @@
-# load libraries
+# loading the libraries
 library(tidyverse)
+library(tidytext)
 library(spacyr)
+spacy_initialize(model = "en_core_web_sm")
 
-# read data in
+# read the data in
+emma_book <- read_tsv("processed-data/emma-book.tsv") %>%
+  rename(text = ".")
+
 emma_script <- read_tsv("processed-data/emma-script.tsv") %>%
   rename(text = ".")
 
-emma_book <- read_tsv("processed-data/emma-book.tsv") %>%
-  rename(text = ".")
-  
-# annotate text with spacyr
-spacy_initialize(model = "en_core_web_sm")
-
-annotated_script <- spacy_parse(emma_script$text,
-                                dependency = TRUE,
-                                nounphrase = TRUE)
-
+# annotate both data sets
 annotated_book <- spacy_parse(emma_book$text,
+                              tag = TRUE,
                               dependency = TRUE,
                               nounphrase = TRUE)
+annotated_script <- spacy_parse(emma_script$text,
+                                 tag = TRUE,
+                                 dependency = TRUE,
+                                 nounphrase = TRUE) 
 
+# add source to both annotate dataframe
+annotated_book <- annotated_book %>%
+  mutate(source = "book")
 annotated_script <- annotated_script %>%
   mutate(source = "script")
 
-annotated_book <- annotated_book %>%
-  mutate(source = "book")
-
-annotated_data <- bind_rows(annotated_script,
-                            annotated_book)
-
+# combine dataframes
+annotated_data <- bind_rows(annotated_book,
+                            annotated_script)
 annotated_data %>%
   count(source)
 
-## noun phrases
-# one word noun phrase: beg_root
-# two word noun phrase: beg end_root
-# three word noun phrase: beg mid end_root 
-# four word noun phrase: be mid mid end_root
+# extract noun phrases function
+extracted_nounphrases_book <- spacy_extract_nounphrases(emma_book$text)
 
-# extract the complete noun phrases from the data
-# noun_phrase source
-# 20 minutes after the hour (14:20)
-annotated_data <- annotated_data %>%
-  mutate(np_id = NA)
+# assign unique id to tokens in the same noun phrase
+annotated_data <- assign_id_to_nps(annotated_data)
 
-np_count <- 0
-for (i in 1:nrow(annotated_data)) {
-  
-  if (annotated_data$nounphrase[i] == "beg") {
-    np_count <- np_count + 1
-  }
-  
-  if (annotated_data$nounphrase[i] != "" & 
-      annotated_data$nounphrase[i] != "beg_root") {
-    annotated_data$np_id[i] <- np_count
-  }
-}
+# extract noun phrases by source
+emma_nps <- extract_nps(annotated_data)
 
-write_tsv(annotated_data, "processed-data/annotated-data.tsv")
-
-all_nps <- annotated_data %>%
-  group_by(source, np_id) %>%
-  summarize(complete_np = tolower(paste(token, collapse = " ")),
-            np_lemma = paste(lemma, collapse = " "),
-            np_pos = paste(pos, collapse = " "))
-
-library(tidytext)
-all_nps %>%
-  count(source, complete_np, sort = TRUE) %>%
+# visualize most common noun phrases for each source
+emma_nps %>%
+  count(source, complete_np) %>%
   group_by(source) %>%
   slice_max(n, n = 15) %>%
   ggplot(aes(y = reorder_within(complete_np, n, source),
-            x = n)) +
-  geom_col() +
-  facet_wrap(~source, scales = "free") +
-  scale_y_reordered()
-
-all_nps %>%
-  count(source, np_pos, sort = TRUE) %>%
-  group_by(source) %>%
-  slice_max(n, n = 15) %>%
-  ggplot(aes(y = reorder_within(np_pos, n, source),
              x = n)) +
   geom_col() +
   facet_wrap(~source, scales = "free") +
   scale_y_reordered() +
   theme_linedraw() +
-  labs(y = "",
+  labs(y = "noun phrases",
        x = "raw frequency")
-
-
-
-
 
