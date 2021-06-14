@@ -1,0 +1,108 @@
+---
+title: "PUC-SP Computing"
+subtitle: "Module 04 -- R Markdown"
+author: "Adriana Picoral"
+date: "6/14/2021"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+opts_chunk$set(echo = FALSE, message = FALSE)
+```
+
+# Big title
+
+You enter your text normally, and because it is not R, you won't get a parsing error. It will render as text. To do to italics *these words are in italics*. For bold, **these words are in bold**.
+
+_italics_
+
+__bold__
+
+*This sentence is in italics __but I want some bold in there__*
+
+## Second level title
+
+I would enter my text here.
+
+### Third level title
+
+Reasons to learn R markdown:
+
+* Separate semantics and formatting -- easier to change formatting
+* Include R code into your prose -- reproducible research
+
+I can create the same list, but ordered:
+
+1. You don't have to keep track of numbers
+1. Markdown generates the correct order for you
+1. So you can add an item anywhere
+1. When you change your data, all tables and plots update automatically -- just hit knit
+
+> "Don't use Word, it breaks my heart" -- Adriana Picoral
+
+# Emma book vs. script
+
+## Read data in
+
+Use shortcut *cmd/crtl + option/alt + i* to create a R code chunk.
+
+```{r echo=TRUE}
+annotated_tokens_emma <- read_tsv("processed-data/annotated-data.tsv")
+```
+
+
+
+```{r}
+glimpse(annotated_tokens_emma)
+```
+
+## Subcorpora size
+
+Here is the token count for each source (i.e., book vs. script).
+
+```{r}
+annotated_tokens_emma %>%
+  count(source) %>%
+  kable(col.names = c("Subcorpus", "Token Count"),
+        caption = "Token count across subcorpora",
+        format.args = list(big.mark = ","))
+```
+
+| Column One | Column 2 | Column 3 |
+| ---------- | -------- | -------- |
+| row 1 col 1 | row 1 col 2 | row 1 col 3 |
+| row 2 col 1 | row 2 col 2 | row 2 col 3 |
+
+
+| Subcorpus | Description |
+| :--------- | :----------- |
+| Book | all the words in the Emma novel |
+| Script | all the words in the Emma (1996) movie script |
+
+## Plots
+
+Here's a plot with the top 15 most frequent tokens in each subcorpus.
+
+```{r fig.height=3, fig.width=6, fig.align='center'}
+library(tidytext)
+
+annotated_tokens_emma %>%
+  count(source, token) %>%
+  group_by(source) %>%
+  slice_max(order_by = n, n = 15) %>%
+  ggplot(aes(x = n,
+             y = reorder_within(token, n, source))) +
+  geom_col() +
+  facet_wrap(~source, scales = "free") +
+  scale_y_reordered()
+  
+
+```
+
+
+
